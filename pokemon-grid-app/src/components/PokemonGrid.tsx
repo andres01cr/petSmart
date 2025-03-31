@@ -1,42 +1,65 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import PokemonCard from './PokemonCard';
-import { usePokemon } from '@/hooks/usePokemon';
 import PokemonDetailModal from './PokemonDetailModal';
+import { usePokemon } from '@/hooks/usePokemon';
 
 const PokemonGrid: React.FC = () => {
-  const { pokemons, loadPokemonDetail, selectedPokemon } = usePokemon();
+  const { pokemons, loadPokemonDetail, loadRandomPokemon, loading } = usePokemon();
   const [open, setOpen] = useState(false);
 
-  const handleOpen = (name: string) => {
-    loadPokemonDetail(name);
-    setOpen(true);
+  useEffect(() => {
+    loadRandomPokemon();
+  }, []);
+
+  const handleOpen = (pokemonId: number) => {
+    const selected = pokemons.find((p) => p.id === pokemonId);
+    if (selected) {
+      loadPokemonDetail(selected);
+      setOpen(true);
+    }
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleClose = () => setOpen(false);
+  
 
   return (
-    <>
-      <Grid container spacing={2}>
-        {pokemons.map((pokemon) => (
-          <Grid size={{ xs: 2, sm: 4, md: 4 }} key={pokemon.id}>
+    <Box sx={{ px: { xs: 1, sm: 2, md: 3, lg: 4 }, py: 3 }}>
+      {loading ? (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="200px"
+        >
+          <CircularProgress size={60} thickness={5} color="primary" />
+        </Box>
+      ) : (
+        <Grid
+          container
+          spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }}
+          columns={12}
+          wrap="wrap"
+          justifyContent="center"
+        >
+          {pokemons.map((pokemon) => (
             <PokemonCard
+              key={pokemon.id}
               name={pokemon.name}
               image={pokemon.image}
-              onClick={() => handleOpen(pokemon.name)}
+              onClick={() => handleOpen(pokemon.id)}
             />
-          </Grid>
-        ))}
-      </Grid>
+          ))}
+        </Grid>
+      )}
 
       <PokemonDetailModal open={open} onClose={handleClose} />
-    </>
+    </Box>
   );
 };
 
 export default PokemonGrid;
-

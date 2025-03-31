@@ -1,37 +1,59 @@
 import axios from 'axios';
 import type { Pokemon, PokemonDetail } from '@/types/pokemon';
 
-export const getRandomPokemonList = async (count: number): Promise<Pokemon[]> => {
-  const ids = Array.from({ length: count }, () => Math.floor(Math.random() * 151) + 1); // Gen 1 IDs: 1-151
+const BASE = 'https://pokeapi.co/api/v2';
 
-  const responses = await Promise.allSettled(
-    ids.map((id) =>
-      axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`)
-    )
+export const getRandomPokemonList = async (count: number): Promise<Pokemon[]> => {
+  const uniqueIds = new Set<number>();
+  while (uniqueIds.size < count) {
+    uniqueIds.add(Math.floor(Math.random() * 151) + 1);
+  }
+
+  const detailResponses = await Promise.allSettled(
+    Array.from(uniqueIds).map((id) => axios.get(`${BASE}/pokemon/${id}`))
   );
 
-  return responses
-    .filter((res): res is PromiseFulfilledResult<any> => res.status === 'fulfilled')
-    .map((res) => ({
-      id: res.value.data.id,
-      name: res.value.data.name,
-      image: res.value.data.sprites.other['official-artwork'].front_default,
-    }));
+  return detailResponses
+    .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+    .map((r) => {
+      const data = r.value.data;
+      return {
+        id: data.id,
+        name: data.name,
+        image: data.sprites.other['official-artwork'].front_default || '',
+        abilities: data.abilities.map((a: any) => a.ability.name),
+      };
+    });
 };
 
-export const getPokemonDetails = async (name: string): Promise<PokemonDetail> => {
-  const [res, species] = await Promise.all([
-    axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`),
-    axios.get(`https://pokeapi.co/api/v2/pokemon-species/${name}`),
+export const getPokemonDetails = async (
+  id: number,
+  name: string,
+  abilities: string[],
+  image: string
+): Promise<PokemonDetail> => {
+  const [genderRes, charRes] = await Promise.allSettled([
+    axios.get(`${BASE}/gender/${id}`),
+    axios.get(`${BASE}/characteristic/${id}`),
   ]);
 
+  const genderData = genderRes.status === 'fulfilled' ? genderRes.value.data : null;
+  const charData = charRes.status === 'fulfilled' ? charRes.value.data : null;
+
+  const genderInfo = genderData?.pokemon_species_details.find(
+    (p: any) => p.pokemon_species.name === name
+  );
+  const gender = genderInfo ? genderData.name : 'unknown';
+
+  const description =
+    charData?.descriptions.find((d: any) => d.language.name === 'en')?.description ??
+    'Description not available.';
+
   return {
-    name: res.data.name,
-    image: res.data.sprites.other['official-artwork'].front_default,
-    abilities: res.data.abilities.map((a: any) => a.ability.name),
-    genderRate: species.data.gender_rate,
-    description: species.data.flavor_text_entries.find(
-      (entry: any) => entry.language.name === 'en'
-    )?.flavor_text,
+    name,
+    image,
+    abilities,
+    gender,
+    description,
   };
 };
