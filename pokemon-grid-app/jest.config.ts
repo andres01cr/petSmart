@@ -1,4 +1,3 @@
-// jest.config.ts
 import nextJest from 'next/jest';
 
 const createJestConfig = nextJest({
