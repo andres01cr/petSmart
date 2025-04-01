@@ -1,5 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { getRandomPokemonList, getPokemonDetails } from '@/services/pokemonService';
+import {
+  getRandomPokemonList,
+  getPokemonDetails,
+  getGenderSpecies,
+} from '@/services/pokemonService';
 import type { Pokemon, PokemonDetail } from '@/types/pokemon';
 
 interface PokemonState {
@@ -7,6 +11,8 @@ interface PokemonState {
   selectedPokemon: PokemonDetail | null;
   loading: boolean;
   detailLoading: boolean;
+  femaleSpecies: string[];
+  maleSpecies: string[];
 }
 
 const initialState: PokemonState = {
@@ -14,6 +20,8 @@ const initialState: PokemonState = {
   selectedPokemon: null,
   loading: false,
   detailLoading: false,
+  femaleSpecies: [],
+  maleSpecies: [],
 };
 
 export const fetchRandomPokemon = createAsyncThunk('pokemon/fetchRandom', async () => {
@@ -22,10 +30,32 @@ export const fetchRandomPokemon = createAsyncThunk('pokemon/fetchRandom', async 
 
 export const fetchPokemonDetail = createAsyncThunk(
   'pokemon/fetchDetail',
-  async (pokemon: Pokemon) => {
-    return await getPokemonDetails(pokemon.id, pokemon.name, pokemon.abilities, pokemon.image);
+  async (pokemon: Pokemon, { getState }) => {
+    const detail = await getPokemonDetails(
+      pokemon.id,
+      pokemon.name,
+      pokemon.abilities,
+      pokemon.image
+    );
+
+    const state = getState() as { pokemon: PokemonState };
+    const { femaleSpecies, maleSpecies } = state.pokemon;
+
+    const isFemale = femaleSpecies.includes(pokemon.name);
+    const isMale = maleSpecies.includes(pokemon.name);
+
+    let gender = 'genderless';
+    if (isFemale && isMale) gender = 'both';
+    else if (isFemale) gender = 'female';
+    else if (isMale) gender = 'male';
+
+    return { ...detail, gender };
   }
 );
+
+export const fetchGenderSpecies = createAsyncThunk('pokemon/fetchGenders', async () => {
+  return await getGenderSpecies();
+});
 
 const pokemonSlice = createSlice({
   name: 'pokemon',
@@ -46,6 +76,10 @@ const pokemonSlice = createSlice({
       .addCase(fetchPokemonDetail.fulfilled, (state, action: PayloadAction<PokemonDetail>) => {
         state.selectedPokemon = action.payload;
         state.detailLoading = false;
+      })
+      .addCase(fetchGenderSpecies.fulfilled, (state, action: PayloadAction<{ femaleNames: string[]; maleNames: string[] }>) => {
+        state.femaleSpecies = action.payload.femaleNames;
+        state.maleSpecies = action.payload.maleNames;
       });
   },
 });

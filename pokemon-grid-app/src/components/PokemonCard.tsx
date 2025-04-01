@@ -31,7 +31,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ name, image, onClick }) => {
           />
         ) : (
           <Box sx={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Skeleton variant="rectangular" width={100} height={100} />
+            <Skeleton data-testid="skeleton" variant="rectangular" width={100} height={100} />
           </Box>
         )}
         <CardContent>

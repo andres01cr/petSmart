@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchRandomPokemon, fetchPokemonDetail } from '@/redux/slices/pokemonSlice';
+import { fetchRandomPokemon, fetchPokemonDetail, fetchGenderSpecies  } from '@/redux/slices/pokemonSlice';
 import type { Pokemon } from '@/types/pokemon';
 
 import { useCallback } from 'react';
@@ -19,6 +19,11 @@ export const usePokemon = () => {
     dispatch(fetchPokemonDetail(pokemon));
   }, [dispatch]);
 
+
+  const loadGenderSpecies = useCallback(() => {
+    dispatch(fetchGenderSpecies());
+  }, [dispatch]);
+
   return {
     pokemons,
     selectedPokemon,
@@ -26,5 +31,6 @@ export const usePokemon = () => {
     detailLoading,
     loadRandomPokemon,
     loadPokemonDetail,
+    loadGenderSpecies,
   };
 };

@@ -9,11 +9,12 @@ import PokemonDetailModal from './PokemonDetailModal';
 import { usePokemon } from '@/hooks/usePokemon';
 
 const PokemonGrid: React.FC = () => {
-  const { pokemons, loadPokemonDetail, loadRandomPokemon, loading } = usePokemon();
+  const { pokemons, loadPokemonDetail, loadRandomPokemon, loading, loadGenderSpecies } = usePokemon();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     loadRandomPokemon();
+    loadGenderSpecies();
   }, []);
 
   const handleOpen = (pokemonId: number) => {
